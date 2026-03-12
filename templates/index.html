@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>StudyBot - Chat</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<nav>
+    <h2>StudyBot 🤖</h2>
+    <div>
+        <a href="/logout">Logout</a>
+    </div>
+</nav>
+
+<div class="container">
+    <h3>Welcome, {{ username }}!</h3>
+
+    <!-- Chat Box -->
+    <div class="chat-box" id="chat-box"></div>
+
+    <!-- Form Section -->
+    <form id="full-form" enctype="multipart/form-data">
+        <div class="input-area">
+            <input type="text" id="question-input" placeholder="Ask a question..." autocomplete="off" required>
+            <button type="submit" id="send-button">Send</button>
+        </div>
+        <div class="upload-area">
+            <input type="file" id="pdf-file" name="pdf" style="display:none;">
+            <button type="button" id="upload-button">📄 Upload PDF</button>
+            <span id="upload-status"></span> <!-- Status for file upload -->
+        </div>
+    </form>
+</div>
+
+<script>
+let chatBox = document.getElementById('chat-box');
+let uploadStatus = document.getElementById('upload-status');
+
+// Append message to chat
+function appendMessage(sender, message) {
+    let div = document.createElement('div');
+    div.className = sender;
+    div.innerHTML = message;
+    chatBox.appendChild(div);
+    chatBox.scrollTop = chatBox.scrollHeight;
+}
+
+// Handle Send button
+document.getElementById('full-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+    let input = document.getElementById('question-input');
+    let question = input.value.trim();
+    if (!question) return;
+
+    appendMessage('user', `<b>You:</b> ${question}`);
+    input.value = "";
+
+    appendMessage('bot', `<i>Typing...</i>`);
+
+    fetch('/ask', {
+        method: 'POST',
+        body: new URLSearchParams({'question': question}),
+        headers: {'Content-Type': 'application/x-www-form-urlencoded'}
+    })
+    .then(response => response.json())
+    .then(data => {
+        document.querySelector('.bot:last-child').innerHTML = `<b>Bot:</b><br>${data[0]}`;
+    })
+    .catch(err => {
+        document.querySelector('.bot:last-child').innerHTML = "❌ Error fetching response.";
+    });
+});
+
+// Handle Upload button
+document.getElementById('upload-button').addEventListener('click', function() {
+    document.getElementById('pdf-file').click();
+});
+
+// When user selects a file
+document.getElementById('pdf-file').addEventListener('change', function() {
+    let fileInput = this;
+    if (fileInput.files.length > 0) {
+        let formData = new FormData();
+        formData.append('pdf', fileInput.files[0]);
+
+        uploadStatus.innerHTML = 'Uploading...'; // Update status while uploading
+
+        fetch('/upload', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.text())
+        .then(msg => {
+            uploadStatus.innerHTML = msg; // Show success or failure message
+        })
+        .catch(err => {
+            uploadStatus.innerHTML = '❌ Error uploading file.';
+        });
+    }
+});
+</script>
+
+</body>
+</html>

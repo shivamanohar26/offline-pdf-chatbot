@@ -1,0 +1,11 @@
+flask
+faiss-cpu
+transformers
+sentence-transformers
+PyPDF2
+Flask
+PyPDF2
+python-docx
+faiss-cpu
+sentence-transformers
+python-docx
